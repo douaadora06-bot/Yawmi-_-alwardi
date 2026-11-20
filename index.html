@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f8dce8">
+<title>يومي الوردي 🌸</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#fff8fb;color:#68495a;font-family:Arial,sans-serif}
+header{background:#f6dce8;padding:25px 18px;text-align:center;border-radius:0 0 28px 28px}
+h1{color:#a65378;margin:5px}
+header p{margin:8px}
+main{padding:15px;max-width:650px;margin:auto}
+section{background:white;border:1px solid #f1dce6;border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 3px 12px #eedde5}
+h2{font-size:19px;color:#a65378;margin-top:0}
+.item{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid #f6eaf0}
+input,textarea{font:inherit;padding:11px;border:1px solid #e7cbd9;border-radius:10px;background:#fffafd;color:#68495a;max-width:100%}
+input[type=checkbox]{width:20px;height:20px;accent-color:#bd7294}
+button{background:#bd7294;color:white;border:0;padding:11px 15px;border-radius:12px;font:inherit;margin:4px;cursor:pointer}
+button.delete{background:#ead2df;color:#704b5e}
+input[type=text]{width:65%}
+textarea{width:100%;min-height:100px}
+small{color:#98788a}
+</style>
+</head>
+<body>
+<header>
+<h1>🌸 يومي الوردي 🌸</h1>
+<p>خطوة صغيرة كل يوم تصنع فرقاً جميلاً</p>
+<div id="today"></div>
+</header>
+<main>
+<section>
+<h2>🌷 صلاتي اليوم</h2>
+<div id="prayers"></div>
+<p id="prayerCount"></p>
+<small>سجّلي الصلاة بعد أدائها. هذه متابعة شخصية وليست مواقيت الصلاة.</small>
+</section>
+<section>
+<h2>💗 عاداتي اليومية</h2>
+<div id="habits"></div>
+<input id="habitInput" type="text" placeholder="أضيفي عادة جديدة">
+<button onclick="addHabit()">إضافة عادة +</button>
+</section>
+<section>
+<h2>📿 أذكاري</h2>
+<div id="adhkar"></div>
+<input id="dhikrInput" type="text" placeholder="اكتبي الذكر">
+<input id="dhikrCount" type="number" min="1" value="33" style="width:75px">
+<button onclick="addDhikr()">إضافة ذكر +</button>
+</section>
+<section>
+<h2>📝 مذكرتي اليومية</h2>
+<textarea id="note" placeholder="اكتبي أفكارك وإنجازاتك اليوم..."></textarea>
+<button onclick="saveNote()">حفظ المذكرة</button>
+<small id="saved"></small>
+</section>
+</main>
+<script>
+const today=new Date().toLocaleDateString('ar-DZ',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('today').textContent=today;
+const key='yawmi-'+new Date().toISOString().slice(0,10);
+function get(k,d){try{return JSON.parse(localStorage.getItem(key+k))??d}catch(e){return d}}
+function put(k,v){localStorage.setItem(key+k,JSON.stringify(v))}
+const prayerNames=['الفجر','الظهر','العصر','المغرب','العشاء'];
+let prayerState=get('prayers',{});
+let habits=get('habits',['شرب الماء','العناية بالبشرة','الدراسة','الحركة والرياضة']);
+let habitState=get('habitState',{});
+let adhkar=get('adhkar',[]);
+function renderPrayers(){
+document.getElementById('prayers').innerHTML=prayerNames.map(p=>`<label class="item">صلاة ${p}<input type="checkbox" ${prayerState[p]?'checked':''} onchange="prayerState['${p}']=this.checked;put('prayers',prayerState);renderPrayers()"></label>`).join('');
+let n=prayerNames.filter(p=>prayerState[p]).length;
+document.getElementById('prayerCount').textContent='أنجزتِ '+n+' من 5 صلوات 🌷';
+}
+function renderHabits(){
+document.getElementById('habits').innerHTML=habits.map((h,i)=>`<label class="item">${escapeHTML(h)} <input type="checkbox" ${habitState[i]?'checked':''} onchange="habitState[${i}]=this.checked;put('habitState',habitState)"></label>`).join('');
+}
+function addHabit(){
+let v=document.getElementById('habitInput').value.trim();if(!v)return;
+habits.push(v);put('habits',habits);document.getElementById('habitInput').value='';renderHabits();
+}
+function renderDhikr(){
+document.getElementById('adhkar').innerHTML=adhkar.map((d,i)=>`<div class="item"><span>${escapeHTML(d.name)} <small>(${d.target})</small></span><span><button onclick="countDhikr(${i})">${d.done||0}/${d.target}</button><button class="delete" onclick="removeDhikr(${i})">×</button></span></div>`).join('');
+}
+function addDhikr(){
+let name=document.getElementById('dhikrInput').value.trim();
+let target=Math.max(1,Number(document.getElementById('dhikrCount').value)||1);
+if(!name)return;adhkar.push({name,target,done:0});put('adhkar',adhkar);
+document.getElementById('dhikrInput').value='';renderDhikr();
+}
+function countDhikr(i){adhkar[i].done=Math.min(adhkar[i].target,(adhkar[i].done||0)+1);put('adhkar',adhkar);renderDhikr()}
+function removeDhikr(i){adhkar.splice(i,1);put('adhkar',adhkar);renderDhikr()}
+function saveNote(){localStorage.setItem('yawmi-note-'+key,document.getElementById('note').value);document.getElementById('saved').textContent='تم حفظ مذكرتك على هذا الهاتف 💗'}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('note').value=localStorage.getItem('yawmi-note-'+key)||'';
+renderPrayers();renderHabits();renderDhikr();
+</script>
+</body>
+</html>
